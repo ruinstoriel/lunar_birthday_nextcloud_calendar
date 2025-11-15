@@ -1,6 +1,7 @@
 import json
 import os
-
+import uuid
+from lunarcalendar import Converter, Lunar
 
 class Icswriter(object):
     def __init__(self, year=50, file_loc='calender.json', save_dir='输出目录'):
@@ -13,8 +14,6 @@ class Icswriter(object):
         self.dir = save_dir
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
-        with open(file_loc, 'r') as f:
-            self.jsondata = json.load(f)
 
     def run(self, name: str, month: int, day: int):
         '''
@@ -27,28 +26,41 @@ class Icswriter(object):
             return 'error'
         f = open(os.path.join(self.dir, name + '.ics'), 'w', encoding='utf-8')
         f.write('BEGIN:VCALENDAR' + '\n')
-        f.write('PRODID:-//Google Inc//Google Calendar 70.9054//EN' + '\n')
+        f.write('PRODID:-//SabreDAV//SabreDAV//EN' + '\n')
         f.write('VERSION:2.0' + '\n')
-        for i in range(2021, 2021 + self.year):
-            data = self.jsondata[str(i)][str(month)][str(day)]
+        for i in range(2025, 2025 + self.year):
+            # 定义农历日期，例如 2025 年农历二月初二
+            lunar_date = Lunar(i, month, day, isleap=False)
+
+            # 进行转换
+            solar_date = Converter.Lunar2Solar(lunar_date)
+            data = solar_date.to_date().strftime("%Y%m%d")
             self.writefile(f, name, data)
         f.write('END:VCALENDAR' + '\n')
         f.close()
 
     def writefile(self, f, name, data):
         f.write('BEGIN:VEVENT' + '\n')
-        f.write('DTSTART;VALUE=DATE:' + data + '\n')
-        f.write('DTEND;VALUE=DATE:' + str(int(data) + 1) + '\n')
+        f.write('DTSTART;TZID=Asia/Shanghai:' + data + '\n')
+        f.write('DTEND;TZID=Asia/Shanghai:' + str(int(data) + 1) + '\n')
         f.write('CLASS:PRIVATE' + '\n')
         f.write('DESCRIPTION:' + '\n')
         f.write('LOCATION:' + '\n')
-        f.write('SEQUENCE:0' + '\n')
+        f.write('SEQUENCE:2' + '\n')
+        f.write('UID:' + str(uuid.uuid4()) + '\n')
         f.write('STATUS:CONFIRMED' + '\n')
         f.write('SUMMARY:' + name + '生日' + '\n')
         f.write('TRANSP:TRANSPARENT' + '\n')
+
+        f.write('BEGIN:VALARM' + '\n')
+        f.write('ACTION:DISPLAY' + '\n')
+        f.write('TRIGGER;RELATED=START:PT0S' + '\n')
+        f.write('SUMMARY:' + name + '生日' + '\n')
+        f.write('DESCRIPTION:This is an event reminder' + '\n')
+        f.write('END:VALARM' + '\n')
         f.write('END:VEVENT' + '\n')
 
 
 if __name__ == '__main__':
     ics = Icswriter(10)
-    ics.run('自己', 1, 9)
+    ics.run('老哥', 6, 27)
