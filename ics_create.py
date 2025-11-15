@@ -67,7 +67,8 @@ class Icswriter(object):
 
 
 def read_txt_test():
-
+    # 格式为
+    # 人名 m-d
     with open('birthday.txt', 'r', encoding='utf-8') as file:
         for line in file:
             line = line.strip()  # 去除首尾空白字符
