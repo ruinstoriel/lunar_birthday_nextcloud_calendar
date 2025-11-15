@@ -4,7 +4,7 @@ import uuid
 from lunarcalendar import Converter, Lunar
 
 class Icswriter(object):
-    def __init__(self, year=50, file_loc='calender.json', save_dir='输出目录'):
+    def __init__(self, year=50, save_dir='output'):
         '''
         :param year: 想生成多少年的，比如10年的生日
         :param file_loc: 日历json的位置，一般不用管
@@ -14,6 +14,11 @@ class Icswriter(object):
         self.dir = save_dir
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
+        f = open(os.path.join(self.dir,  'birthday.ics'), 'w', encoding='utf-8')
+        f.write('BEGIN:VCALENDAR' + '\n')
+        f.write('PRODID:-//SabreDAV//SabreDAV//EN' + '\n')
+        f.write('VERSION:2.0' + '\n')
+        self.file = f
 
     def run(self, name: str, month: int, day: int):
         '''
@@ -24,10 +29,7 @@ class Icswriter(object):
         '''
         if month not in range(1, 13) or day not in range(1, 31):
             return 'error'
-        f = open(os.path.join(self.dir, name + '.ics'), 'w', encoding='utf-8')
-        f.write('BEGIN:VCALENDAR' + '\n')
-        f.write('PRODID:-//SabreDAV//SabreDAV//EN' + '\n')
-        f.write('VERSION:2.0' + '\n')
+
         for i in range(2025, 2025 + self.year):
             # 定义农历日期，例如 2025 年农历二月初二
             lunar_date = Lunar(i, month, day, isleap=False)
@@ -35,11 +37,13 @@ class Icswriter(object):
             # 进行转换
             solar_date = Converter.Lunar2Solar(lunar_date)
             data = solar_date.to_date().strftime("%Y%m%d")
-            self.writefile(f, name, data)
-        f.write('END:VCALENDAR' + '\n')
-        f.close()
+            self.writefile( name, data)
 
-    def writefile(self, f, name, data):
+    def flush(self):
+        self.file.write('END:VCALENDAR' + '\n')
+        self.file.close()
+    def writefile(self, name, data):
+        f=self.file
         f.write('BEGIN:VEVENT' + '\n')
         f.write('DTSTART;TZID=Asia/Shanghai:' + data + '\n')
         f.write('DTEND;TZID=Asia/Shanghai:' + str(int(data) + 1) + '\n')
@@ -49,18 +53,38 @@ class Icswriter(object):
         f.write('SEQUENCE:2' + '\n')
         f.write('UID:' + str(uuid.uuid4()) + '\n')
         f.write('STATUS:CONFIRMED' + '\n')
-        f.write('SUMMARY:' + name + '生日' + '\n')
+        f.write('SUMMARY:' + name + '的生日' + '\n')
         f.write('TRANSP:TRANSPARENT' + '\n')
 
         f.write('BEGIN:VALARM' + '\n')
         f.write('ACTION:DISPLAY' + '\n')
-        f.write('TRIGGER;RELATED=START:PT0S' + '\n')
-        f.write('SUMMARY:' + name + '生日' + '\n')
+        f.write('TRIGGER;RELATED=START:PT7H' + '\n')
+        f.write('SUMMARY:' + name + '的生日' + '\n')
         f.write('DESCRIPTION:This is an event reminder' + '\n')
         f.write('END:VALARM' + '\n')
         f.write('END:VEVENT' + '\n')
 
 
+
+def read_txt_test():
+
+    with open('birthday.txt', 'r', encoding='utf-8') as file:
+        for line in file:
+            line = line.strip()  # 去除首尾空白字符
+            if line:  # 确保不是空行
+                parts = line.split()  # 默认按空白字符分割
+
+                key = parts[0]
+                value = parts[1]
+                yield key,value
+
 if __name__ == '__main__':
+    
     ics = Icswriter(10)
-    ics.run('老哥', 6, 27)
+    for key, value in read_txt_test():
+        m = value.split('-')[0]
+        d = value.split('-')[1]
+        print(f"{key}: {m},{d}")
+
+        ics.run(key, int(m), int(d))
+    ics.flush()
