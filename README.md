@@ -1,4 +1,4 @@
 # lunar_birthday_nextcloud_calendar
 根据农历生日生成ics文件，从而方便导入nextcloud日历
 
-根据农历生日生成ics文件，然后导入谷歌日历，生日那一天会提醒，适合使用nextcloud日历的用户。
+根据农历生日生成ics文件，然后导入nextcloud日历，生日那一天会提醒，适合使用nextcloud日历的用户。
